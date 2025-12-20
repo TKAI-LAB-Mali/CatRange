@@ -7,7 +7,7 @@ Welcome to the RealKcat repository! This project provides a reproducible pipelin
 ## **Quick Inference with Pretrained Model:**  
 For a hands-on demonstration and interactive inference, use our [`RealKcat_Inference_Interface.ipynb`](https://colab.research.google.com/drive/1z8cPg2J-EF01rd0yl7fgGlvWDohOj5m0?usp=sharing) notebook. Open it directly in Google Colab:
 
-[![Open in Colab](https://colab.research.google.com/assets/colab-btn.svg)](https://colab.research.google.com/drive/1z8cPg2J-EF01rd0yl7fgGlvWDohOj5m0?usp=sharing)
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1z8cPg2J-EF01rd0yl7fgGlvWDohOj5m0?usp=sharing)
 
 This notebook allows you to perform inference on `kcat` and `km` predictions without needing to install or configure anything locally. Simply connect to a Colab runtime, follow the provided instructions, and start exploring the RealKcat models interactively.
 
@@ -178,6 +178,32 @@ python scripts/test_PafA_km_predict.py
 Model outputs, trained models, and prediction results are saved as figures in the `outputs/` directory.
 
 ## License
+
+## 📚 Citation
+
+If you use **RealKcat** in your work, please cite the following:
+
+> 🧬 Anna Sajeevan K, Osinuga A, B A, Ferdous S, Shahreen N, Noor MS, Koneru S, Santos-Correa LM, Salehi R, Chowdhury NB, Calderon-Lopez B, Mali A, Saha R, Chowdhury R.  
+> **Robust Prediction of Enzyme Variant Kinetics with RealKcat**  
+> *bioRxiv* [Preprint], 2025 Feb 15. doi: [10.1101/2025.02.10.637555](https://doi.org/10.1101/2025.02.10.637555)  
+> PMID: 39990461 · PMCID: PMC11844551
+
+<details>
+<summary>📄 BibTeX</summary>
+
+```bibtex
+@article{sajeevan2025robust,
+  author = {Sajeevan, Anna K and Osinuga, Abraham and B, A and Ferdous, Sakib and Shahreen, Nabia and Noor, Mohammed Sakib and Koneru, Shashank and Santos-Correa, Laura Mariana and Salehi, Rahil and Chowdhury, Niaz Bahar and Calderon-Lopez, Brisa and Mali, Ankur and Saha, Rajib and Chowdhury, Ranjan},
+  title = {Robust Prediction of Enzyme Variant Kinetics with RealKcat},
+  journal = {bioRxiv},
+  year = {2025},
+  month = {Feb},
+  day = {15},
+  note = {Preprint},
+  doi = {10.1101/2025.02.10.637555},
+  pmid = {39990461},
+  pmcid = {PMC11844551}
+}
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
 
