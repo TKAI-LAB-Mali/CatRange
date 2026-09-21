@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CatRange development updates</title>
+<meta name="description" content="Patches, fixes and new features for CatRange, posted as they land.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧬</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ------------------------------------------------------------------
+     Colour tokens. Light is the default; dark follows the OS setting.
+     ------------------------------------------------------------------ */
+  :root {
+    --bg: #f3f5f7;
+    --surface: #ffffff;
+    --ink: #172026;
+    --muted: #5a6772;
+    --line: #dde3e8;
+    --accent: #2f5d8a;
+    --accent-soft: #e4edf6;
+    --ok: #1f7a4d;
+    --open: #2f5d8a;
+    --merged: #6b4c9a;
+    --closed: #8a4b3b;
+    --curve: #b3c5d7;
+    color-scheme: light dark;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12181d;
+      --surface: #1a2229;
+      --ink: #e6ecf0;
+      --muted: #97a4ae;
+      --line: #2a353e;
+      --accent: #7fb0e0;
+      --accent-soft: #1e2f40;
+      --ok: #5cc28d;
+      --open: #7fb0e0;
+      --merged: #b39ae0;
+      --closed: #d99a88;
+      --curve: #34506b;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12181d; --surface: #1a2229; --ink: #e6ecf0; --muted: #97a4ae;
+    --line: #2a353e; --accent: #7fb0e0; --accent-soft: #1e2f40; --ok: #5cc28d;
+    --open: #7fb0e0; --merged: #b39ae0; --closed: #d99a88; --curve: #34506b;
+  }
+
+  *, *::before, *::after { box-sizing: inherit; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+  a { color: var(--accent); text-underline-offset: 2px; }
+  a:hover { text-decoration-thickness: 2px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+  code, .mono { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.875em; }
+
+  .wrap { max-width: 68rem; margin: 0 auto; padding: 0 1.25rem; }
+
+  /* ---------------- Header ---------------- */
+  header.hero { position: relative; overflow: hidden; padding: 3.5rem 0 2.5rem; }
+  .hero svg.curve { position: absolute; right: 0; top: 1.5rem; width: 34%; height: 80%; pointer-events: none; }
+  @media (max-width: 900px) { .hero svg.curve { display: none; } }
+  .hero svg.curve path { fill: none; stroke: var(--curve); stroke-width: 6; stroke-linecap: round; }
+  .hero svg.curve circle { fill: var(--accent); opacity: .55; }
+  .hero .inner { position: relative; max-width: 40rem; }
+  .crumbs { color: var(--muted); font-size: .9rem; margin: 0 0 1rem; }
+  h1 { font-size: clamp(2rem, 4.5vw, 3rem); line-height: 1.1; font-weight: 600; letter-spacing: -.02em; margin: 0 0 1rem; }
+  .lede { font-size: 1.15rem; color: var(--muted); margin: 0 0 1.5rem; max-width: 36rem; }
+  .actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+  .btn {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .55rem .95rem; border-radius: 6px; font-weight: 500; font-size: .95rem;
+    text-decoration: none; border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  :root[data-theme="dark"] .btn.primary { color: #0f1a24; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn.primary { color: #0f1a24; } }
+  .btn:hover { border-color: var(--accent); }
+
+  /* ---------------- Sections ---------------- */
+  main section { padding: 2.25rem 0; border-top: 1px solid var(--line); }
+  h2 { font-size: 1.4rem; font-weight: 600; margin: 0 0 .35rem; letter-spacing: -.01em; }
+  .sub { color: var(--muted); margin: 0 0 1.5rem; max-width: 40rem; }
+
+  /* Patch notes: a genuine chronological sequence, so a timeline rail is earned */
+  ol.notes { list-style: none; margin: 0; padding: 0 0 0 1.4rem; border-left: 2px solid var(--line); }
+  ol.notes li { position: relative; padding: 0 0 1.75rem .5rem; }
+  ol.notes li::before {
+    content: ""; position: absolute; left: -1.4rem; top: .45rem; transform: translateX(-5px);
+    width: 10px; height: 10px; border-radius: 50%; background: var(--surface); border: 2px solid var(--accent);
+  }
+  ol.notes li:first-child::before { background: var(--accent); }
+  .note-meta { color: var(--muted); font-size: .9rem; display: flex; flex-wrap: wrap; gap: .25rem .9rem; }
+  .note-title { font-weight: 600; font-size: 1.1rem; margin: .1rem 0 .3rem; }
+  .note-body { margin: 0; max-width: 42rem; }
+  .tag { display: inline-block; padding: 0 .5rem; border-radius: 999px; font-size: .8rem; font-weight: 500; background: var(--accent-soft); color: var(--accent); }
+  .note-links { margin: .4rem 0 0; font-size: .95rem; display: flex; flex-wrap: wrap; gap: .9rem; }
+
+  /* Live feed */
+  .feed-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+  .controls { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; font-size: .95rem; }
+  select, button.plain {
+    font: inherit; font-size: .95rem; color: var(--ink); background: var(--surface);
+    border: 1px solid var(--line); border-radius: 6px; padding: .4rem .6rem;
+  }
+  button.plain { cursor: pointer; }
+  button.plain:hover { border-color: var(--accent); }
+  .status-line { color: var(--muted); font-size: .88rem; min-height: 1.3em; }
+
+  .columns { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 1.25rem; }
+  @media (max-width: 900px) { .columns { grid-template-columns: 1fr; } }
+  .col { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 1rem 1.1rem; min-width: 0; }
+  .col h3 { font-size: 1rem; font-weight: 600; margin: 0 0 .75rem; display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; }
+  .col h3 a { font-size: .85rem; font-weight: 400; }
+  ul.items { list-style: none; margin: 0; padding: 0; }
+  ul.items li { padding: .6rem 0; border-top: 1px solid var(--line); }
+  ul.items li:first-child { border-top: 0; padding-top: 0; }
+  .item-title { font-weight: 500; overflow-wrap: anywhere; }
+  .item-title a { color: var(--ink); text-decoration: none; }
+  .item-title a:hover { color: var(--accent); text-decoration: underline; }
+  .item-meta { color: var(--muted); font-size: .85rem; margin-top: .15rem; display: flex; flex-wrap: wrap; gap: .2rem .7rem; }
+  .pill { font-size: .78rem; font-weight: 500; padding: 0 .45rem; border-radius: 999px; border: 1px solid currentColor; }
+  .pill.open { color: var(--open); } .pill.merged { color: var(--merged); } .pill.closed { color: var(--closed); }
+  .empty, .error { color: var(--muted); font-size: .95rem; }
+  .error a { white-space: nowrap; }
+  .skeleton { height: .9rem; border-radius: 4px; background: var(--line); margin: .7rem 0; opacity: .6; }
+
+  /* Follow */
+  .follow { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1.25rem 2rem; }
+  .follow h3 { font-size: 1rem; margin: 0 0 .25rem; }
+  .follow p { margin: 0; color: var(--muted); }
+
+  footer { padding: 2rem 0 3rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .9rem; }
+  footer p { margin: .3rem 0; max-width: 48rem; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hero svg.curve path { stroke-dasharray: 800; stroke-dashoffset: 800; animation: draw 1.6s ease-out .1s forwards; }
+    @keyframes draw { to { stroke-dashoffset: 0; } }
+  }
+</style>
+</head>
+<body>
+
+<!--
+  ============================================================================
+  HOW TO UPDATE THIS PAGE
+  ----------------------------------------------------------------------------
+  1. Patch notes: add a new object to the top of PATCH_NOTES in the <script>
+     at the bottom of this file. Newest first. Nothing else needs changing.
+  2. The "Live from GitHub" section updates itself from the repository in
+     CONFIG. No build step, no token required.
+  ============================================================================
+-->
+
+<header class="hero">
+  <svg class="curve" viewBox="0 0 700 300" preserveAspectRatio="xMaxYMid meet" aria-hidden="true">
+    <!-- A saturating (Michaelis–Menten-shaped) curve: rate rising towards Vmax -->
+    <path d="M20 280 C 120 120, 260 70, 680 52"/>
+    <circle cx="58" cy="227" r="6"/><circle cx="119" cy="170" r="6"/><circle cx="218" cy="117" r="6"/><circle cx="371" cy="79" r="6"/><circle cx="584" cy="57" r="6"/>
+  </svg>
+  <div class="wrap">
+    <div class="inner">
+      <p class="crumbs"><a href="./">TKAI Lab</a> / CatRange / Development</p>
+      <h1>CatRange development updates</h1>
+      <p class="lede">Patches, fixes and new features for CatRange are posted here as they land. Check back, or follow the repository to hear about changes first.</p>
+      <div class="actions">
+        <a class="btn primary" id="repo-link" href="#">View the repository</a>
+        <a class="btn" id="issue-link" href="#">Report a problem</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section id="notes" aria-labelledby="notes-h">
+    <h2 id="notes-h">Patch notes</h2>
+    <p class="sub">What changed, why it matters, and whether you need to do anything.</p>
+    <ol class="notes" id="notes-list"></ol>
+  </section>
+
+  <section id="live" aria-labelledby="live-h">
+    <div class="feed-head">
+      <div>
+        <h2 id="live-h">Live from GitHub</h2>
+        <p class="sub" style="margin:0">Work in progress, straight from the repository.</p>
+      </div>
+      <div class="controls">
+        <label for="branch">Branch</label>
+        <select id="branch"></select>
+        <button class="plain" id="refresh" type="button">Refresh</button>
+      </div>
+    </div>
+    <p class="status-line" id="status" role="status" aria-live="polite"></p>
+    <div class="columns">
+      <div class="col">
+        <h3>Recent commits <a id="commits-all" href="#">All commits</a></h3>
+        <ul class="items" id="commits"></ul>
+      </div>
+      <div class="col">
+        <h3>Pull requests <a id="pulls-all" href="#">All</a></h3>
+        <ul class="items" id="pulls"></ul>
+      </div>
+      <div class="col">
+        <h3>Open issues <a id="issues-all" href="#">All</a></h3>
+        <ul class="items" id="issues"></ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="follow" aria-labelledby="follow-h">
+    <h2 id="follow-h">Stay up to date</h2>
+    <p class="sub">Choose whichever suits you.</p>
+    <div class="follow">
+      <div>
+        <h3>Watch on GitHub</h3>
+        <p>Use <strong>Watch → Custom → Releases</strong> on the <a id="watch-link" href="#">repository</a> to get an email when a new version ships.</p>
+      </div>
+      <div>
+        <h3>Subscribe by RSS</h3>
+        <p>Add the <a id="rss-link" href="#">commit feed</a> to any feed reader.</p>
+      </div>
+      <div>
+        <h3>Found a bug?</h3>
+        <p><a id="issue-link-2" href="#">Open an issue</a> with your input sequence, SMILES and the output you saw.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>If you use CatRange in your work, please cite the paper listed in the repository README.</p>
+    <p id="updated"></p>
+  </div>
+</footer>
+
+<script>
+/* ==========================================================================
+   CONFIG — change these if the repository moves.
+   ========================================================================== */
+const CONFIG = {
+  owner: "TKAI-LAB-Mali",
+  repo: "CatRange",
+  defaultBranch: "main",
+  branches: ["main", "develop", "optimization"],
+  perList: 6,                  // items shown per column
+  cacheMinutes: 10             // keeps visitors well under GitHub's 60 requests/hour limit
+};
+
+/* ==========================================================================
+   PATCH NOTES — add new entries at the TOP. Newest first.
+   Fields: date (YYYY-MM-DD), title, kind ("Fix" | "Feature" | "Docs" | "Notice"),
+           body (plain text), action (optional: what users need to do),
+           links (optional: [{label, url}])
+   ========================================================================== */
+const PATCH_NOTES = [
+  {
+    date: "2026-09-21",
+    title: "Development page launched",
+    kind: "Notice",
+    body: "From now on, patches, bug fixes and new features for CatRange will be announced here. Each entry says what changed and whether you need to update anything.",
+    action: "",
+    links: []
+  }
+  // Example for future entries:
+  // {
+  //   date: "2026-10-01",
+  //   title: "Fix kcat label range for high-activity enzymes",
+  //   kind: "Fix",
+  //   body: "Short description of the problem and the fix.",
+  //   action: "Re-run predictions made before this date.",
+  //   links: [{ label: "Pull request #6", url: "https://github.com/TKAI-LAB-Mali/CatRange/pull/6" }]
+  // },
+];
+
+/* ==========================================================================
+   Nothing below needs editing.
+   ========================================================================== */
+const REPO = `${CONFIG.owner}/${CONFIG.repo}`;
+const GH = `https://github.com/${REPO}`;
+const API = `https://api.github.com/repos/${REPO}`;
+
+const $ = (id) => document.getElementById(id);
+const el = (tag, props = {}, ...kids) => {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === "class") node.className = v;
+    else if (k === "text") node.textContent = v;
+    else node.setAttribute(k, v);
+  }
+  for (const kid of kids) if (kid) node.append(kid);
+  return node;
+};
+const link = (href, text) => el("a", { href, text, rel: "noopener" });
+
+const fmtDate = (iso) => new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+function ago(iso) {
+  const s = (Date.now() - new Date(iso).getTime()) / 1000;
+  const units = [["year", 31536000], ["month", 2592000], ["week", 604800], ["day", 86400], ["hour", 3600], ["minute", 60]];
+  for (const [u, n] of units) if (s >= n) {
+    const v = Math.floor(s / n);
+    return `${v} ${u}${v > 1 ? "s" : ""} ago`;
+  }
+  return "just now";
+}
+
+/* ---------- Static links ---------- */
+function wireLinks() {
+  $("repo-link").href = GH;
+  $("watch-link").href = GH;
+  $("issue-link").href = `${GH}/issues/new`;
+  $("issue-link-2").href = `${GH}/issues/new`;
+  $("pulls-all").href = `${GH}/pulls?q=is%3Apr`;
+  $("issues-all").href = `${GH}/issues`;
+  const updated = new Date(document.lastModified);
+  if (!isNaN(updated)) $("updated").textContent = `Page last updated ${fmtDate(updated.toISOString())}.`;
+}
+
+/* ---------- Patch notes ---------- */
+function renderNotes() {
+  const list = $("notes-list");
+  list.replaceChildren();
+  const notes = [...PATCH_NOTES].sort((a, b) => b.date.localeCompare(a.date));
+  if (!notes.length) {
+    list.append(el("li", {}, el("p", { class: "empty", text: "No patch notes yet. The first one will appear here." })));
+    return;
+  }
+  for (const n of notes) {
+    const meta = el("div", { class: "note-meta" },
+      el("time", { datetime: n.date, text: fmtDate(n.date + "T12:00:00") }),
+      n.kind ? el("span", { class: "tag", text: n.kind }) : null);
+    const item = el("li", {}, meta,
+      el("div", { class: "note-title", text: n.title }),
+      el("p", { class: "note-body", text: n.body }));
+    if (n.action) item.append(el("p", { class: "note-body" }, el("strong", { text: "What to do: " }), n.action));
+    if (n.links && n.links.length) {
+      const box = el("div", { class: "note-links" });
+      n.links.forEach((l) => box.append(link(l.url, l.label)));
+      item.append(box);
+    }
+    list.append(item);
+  }
+}
+
+/* ---------- GitHub fetching with a small cache ---------- */
+function cacheGet(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { t, data } = JSON.parse(raw);
+    return { data, fresh: Date.now() - t < CONFIG.cacheMinutes * 60000, t };
+  } catch { return null; }
+}
+function cacheSet(key, data) {
+  try { localStorage.setItem(key, JSON.stringify({ t: Date.now(), data })); } catch { /* storage full or blocked */ }
+}
+
+class RateLimited extends Error {
+  constructor(reset) { super("rate limited"); this.reset = reset; }
+}
+
+async function gh(path, { force = false } = {}) {
+  const key = `catrange-dev:${path}`;
+  const cached = cacheGet(key);
+  if (cached && cached.fresh && !force) return { data: cached.data, from: "cache", t: cached.t };
+  try {
+    const res = await fetch(`${API}${path}`, { headers: { Accept: "application/vnd.github+json" } });
+    if (res.status === 403 || res.status === 429) {
+      const reset = Number(res.headers.get("x-ratelimit-reset")) * 1000 || null;
+      if (cached) return { data: cached.data, from: "stale", t: cached.t, reset };
+      throw new RateLimited(reset);
+    }
+    if (!res.ok) throw new Error(`GitHub returned ${res.status}`);
+    const data = await res.json();
+    cacheSet(key, data);
+    return { data, from: "network", t: Date.now() };
+  } catch (err) {
+    if (err instanceof RateLimited) throw err;
+    if (cached) return { data: cached.data, from: "stale", t: cached.t };
+    throw err;
+  }
+}
+
+function skeleton(ul) {
+  ul.replaceChildren(...Array.from({ length: 3 }, () => el("li", {}, el("div", { class: "skeleton" }))));
+}
+function showError(ul, err, fallbackUrl, label) {
+  const msg = err instanceof RateLimited
+    ? `GitHub's hourly limit for anonymous visitors was reached${err.reset ? `; it resets around ${new Date(err.reset).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}. `
+    : "Couldn't reach GitHub right now. ";
+  ul.replaceChildren(el("li", { class: "error" }, msg, link(fallbackUrl, label)));
+}
+
+async function loadCommits(force) {
+  const ul = $("commits");
+  const branch = $("branch").value;
+  $("commits-all").href = `${GH}/commits/${encodeURIComponent(branch)}`;
+  $("rss-link").href = `${GH}/commits/${encodeURIComponent(branch)}.atom`;
+  skeleton(ul);
+  try {
+    const r = await gh(`/commits?sha=${encodeURIComponent(branch)}&per_page=${CONFIG.perList}`, { force });
+    ul.replaceChildren();
+    if (!r.data.length) { ul.append(el("li", { class: "empty", text: "No commits on this branch yet." })); return r; }
+    for (const c of r.data) {
+      const [first] = (c.commit.message || "").split("\n");
+      const when = c.commit.author?.date || c.commit.committer?.date;
+      const who = c.author?.login || c.commit.author?.name || "unknown";
+      ul.append(el("li", {},
+        el("div", { class: "item-title" }, link(c.html_url, first)),
+        el("div", { class: "item-meta" },
+          el("span", { class: "mono", text: c.sha.slice(0, 7) }),
+          el("span", { text: who }),
+          when ? el("time", { datetime: when, title: fmtDate(when), text: ago(when) }) : null)));
+    }
+    return r;
+  } catch (err) { showError(ul, err, `${GH}/commits/${branch}`, "See commits on GitHub"); return null; }
+}
+
+async function loadPulls(force) {
+  const ul = $("pulls");
+  skeleton(ul);
+  try {
+    const r = await gh(`/pulls?state=all&sort=updated&direction=desc&per_page=${CONFIG.perList}`, { force });
+    ul.replaceChildren();
+    if (!r.data.length) { ul.append(el("li", { class: "empty", text: "No pull requests yet." })); return r; }
+    for (const p of r.data) {
+      const state = p.merged_at ? "merged" : p.state;
+      const when = p.merged_at || p.updated_at;
+      ul.append(el("li", {},
+        el("div", { class: "item-title" }, link(p.html_url, p.title)),
+        el("div", { class: "item-meta" },
+          el("span", { class: `pill ${state}`, text: state[0].toUpperCase() + state.slice(1) }),
+          el("span", { text: `#${p.number}` }),
+          el("span", { text: `${p.head?.ref || "?"} → ${p.base?.ref || "?"}` }),
+          el("time", { datetime: when, title: fmtDate(when), text: ago(when) }))));
+    }
+    return r;
+  } catch (err) { showError(ul, err, `${GH}/pulls`, "See pull requests on GitHub"); return null; }
+}
+
+async function loadIssues(force) {
+  const ul = $("issues");
+  skeleton(ul);
+  try {
+    // The issues endpoint also returns pull requests; ask for extra and filter them out.
+    const r = await gh(`/issues?state=open&sort=updated&direction=desc&per_page=${CONFIG.perList * 3}`, { force });
+    const issues = r.data.filter((i) => !i.pull_request).slice(0, CONFIG.perList);
+    ul.replaceChildren();
+    if (!issues.length) { ul.append(el("li", { class: "empty", text: "No open issues. Found a problem? Open one." })); return r; }
+    for (const i of issues) {
+      const labels = (i.labels || []).map((l) => (typeof l === "string" ? l : l.name)).filter(Boolean);
+      ul.append(el("li", {},
+        el("div", { class: "item-title" }, link(i.html_url, i.title)),
+        el("div", { class: "item-meta" },
+          el("span", { text: `#${i.number}` }),
+          labels.length ? el("span", { text: labels.join(", ") }) : null,
+          el("time", { datetime: i.updated_at, title: fmtDate(i.updated_at), text: `updated ${ago(i.updated_at)}` }))));
+    }
+    return r;
+  } catch (err) { showError(ul, err, `${GH}/issues`, "See issues on GitHub"); return null; }
+}
+
+async function loadAll(force = false) {
+  const btn = $("refresh");
+  btn.disabled = true;
+  $("status").textContent = "Checking GitHub…";
+  const results = (await Promise.all([loadCommits(force), loadPulls(force), loadIssues(force)])).filter(Boolean);
+  btn.disabled = false;
+  if (!results.length) { $("status").textContent = ""; return; }
+  const oldest = Math.min(...results.map((r) => r.t));
+  const stale = results.some((r) => r.from === "stale");
+  $("status").textContent = stale
+    ? `Showing saved results from ${ago(new Date(oldest).toISOString())}; GitHub isn't responding with new data right now.`
+    : `Updated ${ago(new Date(oldest).toISOString())}.`;
+}
+
+/* ---------- Boot ---------- */
+function init() {
+  wireLinks();
+  renderNotes();
+  const sel = $("branch");
+  CONFIG.branches.forEach((b) => sel.append(el("option", { value: b, text: b })));
+  sel.value = CONFIG.defaultBranch;
+  sel.addEventListener("change", () => loadCommits(false));
+  $("refresh").addEventListener("click", () => loadAll(true));
+  loadAll(false);
+}
+init();
+</script>
+</body>
+</html>
